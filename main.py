@@ -141,7 +141,7 @@ async def process_email_file(
     Returns:
         bool: True if processing was successful, False otherwise
     """
-    try:
+    try:  # Try to process the email
         logger.info(f"Starting to process email file: {file_path}")
         try:  # Try to read the email
             with open(file_path, "r", encoding="utf-8") as f:
@@ -159,12 +159,15 @@ async def process_email_file(
 
         try:  # Try to process the email using agent
             # Use the agentic workflow: pass the full email to the agent's stream method
-            result = None
+            result = None  # set result to None
+            # Stream the LLM's response
             async for chunk in agent.stream(email_content):
+                # Print the LLM's response
                 if "content" in chunk and chunk["content"]:
                     print(chunk["content"], end="\n", flush=True)
+                # Check if the task is complete
                 if chunk.get("is_task_complete", False):
-                    result = chunk
+                    result = chunk  # set result to the last chunk
                     logger.info("Agentic workflow complete.")
                     break
             # if result is not None and "content" in result and "order" in result["content"].lower():
@@ -186,14 +189,14 @@ async def process_email_file(
                 )
                 mark_email_processed(str(file_path), "agentic_incomplete")
                 return False
-        except Exception as process_error:
+        except Exception as process_error:  # Exception as process_error
             logger.error(
                 f"Error in agentic email processing: {str(process_error)}",
                 exc_info=True,
             )
             mark_email_processed(str(file_path), f"process_error: {str(process_error)}")
             return False
-    except Exception as e:
+    except Exception as e:  # Exception as e
         logger.critical(
             f"Unexpected error in process_email_file: {str(e)}", exc_info=True
         )
@@ -219,6 +222,7 @@ async def process_emails(directory: Optional[Path] = None) -> None:
     # Find all .md files in the directory
     email_files = list(directory.glob("*.md"))
 
+    # If no .md files found, log a warning
     if not email_files:
         logger.warning(f"No .md files found in {directory}")
         return
@@ -244,7 +248,7 @@ async def process_emails(directory: Optional[Path] = None) -> None:
         email_to_process = unprocessed_emails[0]
         logger.info(f"Processing email: {email_to_process.name}")
 
-        # Process the email
+        # Process the email (success is a bool)
         success = await process_email_file(agent, mcp_client, email_to_process)
 
         if success:
