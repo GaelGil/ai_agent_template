@@ -2,4 +2,4 @@
 .env
 .venv
 uv.lock
-.pythoh-version
+.python-version
