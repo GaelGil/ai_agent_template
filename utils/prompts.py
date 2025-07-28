@@ -82,3 +82,8 @@ RESPONSE FORMAT:
     "next_steps": "[NEXT_ACTIONS]"
 }
 """
+
+# System prompt for the agent
+SYSTEM_PROMPT = """You are an order processing assistant. Your task is to analyze emails and extract 
+order information to create purchase orders. Be precise with quantities, product names, and other details.
+When in doubt, ask for clarification."""
