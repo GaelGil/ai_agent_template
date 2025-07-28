@@ -1,5 +1,5 @@
-from typing import Any, Dict, Optional, Union, Optional
-from fastmcp.client.client import Client # type: ignore
+from typing import Any, Dict, Optional, Union
+from fastmcp.client.client import Client
 from contextlib import asynccontextmanager
 
 
@@ -55,7 +55,7 @@ class MCPClient:
 
     async def list_tools(self) -> list:
         """List available tools.
-        
+
         Returns:
             list: List of available tools.
         """
@@ -94,10 +94,7 @@ class MCPClient:
         return openai_tools
 
     async def call_tool(
-        self, 
-        tool_name: str, 
-        arguments: Dict[str, Any], 
-        server: Optional[str] = None
+        self, tool_name: str, arguments: Dict[str, Any], server: Optional[str] = None
     ) -> Any:
         """Call a tool.
 
@@ -113,6 +110,6 @@ class MCPClient:
         """
         if not self._is_connected:
             raise RuntimeError("Not connected to MCP server(s)")
-            
+
         result = await self._client.call_tool(tool_name, arguments, server)
         return result.content[0].text if result.content else None
