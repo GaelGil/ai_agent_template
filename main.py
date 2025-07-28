@@ -15,6 +15,7 @@ from typing import Dict, Optional, Tuple
 from openai import OpenAI
 from MCP.client import MCPClient
 from OrchestratorAgent import OrchestratorAgent
+from utils.prompts import SYSTEM_PROMPT
 
 # Configure logging
 logging.basicConfig(
@@ -27,14 +28,13 @@ BASE_DIR = Path(__file__).parent.parent.parent.parent
 TEST_EMAILS_DIR = BASE_DIR / "test_emails"
 PROCESSED_EMAILS_FILE = BASE_DIR / "processed_emails.json"
 
-# System prompt for the agent
-SYSTEM_PROMPT = """You are an order processing assistant. Your task is to analyze emails and extract 
-order information to create purchase orders. Be precise with quantities, product names, and other details.
-When in doubt, ask for clarification."""
-
 
 async def initialize_agent_service() -> Tuple[OrchestratorAgent, MCPClient]:
-    """Initialize and return the OrchestratorAgent with MCP client integration."""
+    """Initialize and return the OrchestratorAgent with MCP client integration.
+
+    Returns:
+        Tuple[OrchestratorAgent, MCPClient]: A tuple containing the initialized OrchestratorAgent and MCPClient.
+    """
     try:
         logger.info("Initializing MCP client...")
         mcp_client = MCPClient()
@@ -143,7 +143,7 @@ async def process_email_file(
     """
     try:
         logger.info(f"Starting to process email file: {file_path}")
-        try:
+        try:  # Try to read the email
             with open(file_path, "r", encoding="utf-8") as f:
                 email_content = f.read()
             logger.info(
@@ -156,7 +156,8 @@ async def process_email_file(
             mark_email_processed(str(file_path), f"read_error: {str(e)}")
             return False
         print(f"\n{'=' * 80}\nProcessing email: {file_path.name}\n{'=' * 80}")
-        try:
+
+        try:  # Try to process the email using agent
             # Use the agentic workflow: pass the full email to the agent's stream method
             result = None
             async for chunk in agent.stream(email_content):
@@ -166,17 +167,19 @@ async def process_email_file(
                     result = chunk
                     logger.info("Agentic workflow complete.")
                     break
+            # if result is not None and "content" in result and "order" in result["content"].lower():
             if (
                 result
                 and result.get("content")
                 and "order" in result.get("content").lower()
             ):
+                # makr the email as processed
                 mark_email_processed(str(file_path), "completed")
                 logger.info(f"Successfully processed email: {file_path.name}")
                 print(
                     f"\n{'=' * 80}\nSuccessfully processed: {file_path.name}\n{'=' * 80}"
                 )
-                return True
+                return True  # Return True
             else:
                 logger.warning(
                     f"Agentic workflow did not complete successfully for: {file_path.name}"
