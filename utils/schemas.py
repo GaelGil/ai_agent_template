@@ -1,32 +1,28 @@
-from pydantic import BaseModel, Field, Json
-from typing import Any, Dict, List, Literal, Optional, Union
+from pydantic import BaseModel, Field
+from typing import Any, List, Literal
 
 
 class DecideResponse(BaseModel):
     thoughts: list[str] = Field(description="List of thoughts")
     selected_tools: list[dict] = Field(description="List of selected tools")
-    
+
     @classmethod
     def render(
-        cls,
-        tools: list[dict],
-        question: str,
-        called_tools: list[dict],
-        **kwargs
+        cls, tools: list[dict], question: str, called_tools: list[dict], **kwargs
     ) -> str:
         """Render the prompt for deciding which tools to use."""
         tool_descriptions = "\n".join(
             f"- {tool['name']}: {tool.get('description', 'No description')}"
             for tool in tools
         )
-        
+
         called_tools_str = "No tools have been called yet."
         if called_tools:
             called_tools_str = "\n".join(
                 f"- {tool.get('name', 'Unknown')}: {tool.get('result', 'No result')}"
                 for tool in called_tools
             )
-        
+
         return f"""
         You are an AI assistant that helps decide which tools to use to answer a question.
         
@@ -84,12 +80,16 @@ class Plan(BaseModel):
 
 class ToolFunction(BaseModel):
     """Represents a function call from the LLM."""
+
     name: str = Field(description="The name of the function to call.")
-    arguments: str = Field(description="The arguments to call the function with, as a JSON string.")
+    arguments: str = Field(
+        description="The arguments to call the function with, as a JSON string."
+    )
 
 
 class ToolCall(BaseModel):
     """Represents a tool call request from the LLM."""
+
     id: str = Field(description="The ID of the tool call.")
     type: str = Field(default="function", description="The type of the tool call.")
     function: ToolFunction = Field(description="The function details.")
@@ -97,17 +97,20 @@ class ToolCall(BaseModel):
 
 class ToolResult(BaseModel):
     """Represents the result of a tool execution."""
+
     tool_call_id: str = Field(description="The ID of the tool call this result is for.")
     result: str = Field(description="The result of the tool execution.")
-    is_error: bool = Field(default=False, description="Whether the tool execution resulted in an error.")
+    is_error: bool = Field(
+        default=False, description="Whether the tool execution resulted in an error."
+    )
 
 
 class Plan(BaseModel):
     """Output schema for the Planner Agent with tool support."""
+
     response: str = Field(description="The agent's response to the user.")
     tool_calls: List[ToolCall] = Field(
-        default_factory=list,
-        description="List of tool calls to execute, if any."
+        default_factory=list, description="List of tool calls to execute, if any."
     )
 
 
