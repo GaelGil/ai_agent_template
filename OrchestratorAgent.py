@@ -1,10 +1,11 @@
 import asyncio
 from collections.abc import AsyncGenerator
 from .PlannerAgent import PlannerAgent
-from openai import OpenAI  # type: ignore
+from openai import OpenAI
 from .MCP.client import MCPClient
 from typing import Optional
 import json
+from .MCP.server import app
 
 
 class OrchestratorAgent:
@@ -329,7 +330,16 @@ class OrchestratorAgent:
         return f"✅ {name} succeeded: {result_text}"
 
     async def stream(self, question: str) -> AsyncGenerator[dict, None]:
-        """Deterministic order workflow: extract items, create order, add items, summarize."""
+        """Deterministic order workflow: extract items, create order, add items, summarize.
+        This function is the main entry point for the OrchestratorAgent. It takes a question
+        from the user and returns a stream of responses from the LLM.
+
+        Args:
+            question (str): The user's question.
+
+        Yields:
+            dict: The response from the LLM.
+        """
         # 1. Extract items from the email using the LLM with response_format structured output
         print("\n[orchestrator] Extracting order items from email...")
         extract_items_prompt = (
@@ -489,8 +499,6 @@ class OrchestratorAgent:
                 }
         # 4. Mark order as 'ready'
         print(f"[orchestrator] Marking order {order_id} as 'ready'...")
-        from ..storefront.services.order import OrderService
-        from .MCP.server import app
 
         with app.app_context():
             status_updated = OrderService.update_order_status(order_id, "ready")
