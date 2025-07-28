@@ -1,12 +1,13 @@
 import logging
-import uuid
-from openai import OpenAI # type: ignore
-import json
+from openai import OpenAI  # type: ignore
 
 logger = logging.getLogger(__name__)
 
+
 class PlannerAgent:
-    def __init__(self, dev_prompt, mcp_client, messages, tools, model_name: str = "gpt-4.1-mini"):
+    def __init__(
+        self, dev_prompt, mcp_client, messages, tools, model_name: str = "gpt-4.1-mini"
+    ):
         self.model_name = model_name
         self.dev_prompt = dev_prompt
         self.mcp_client = mcp_client
@@ -22,9 +23,7 @@ class PlannerAgent:
     def run(self, query: str):
         self.add_messages(query)
         response = self.llm.chat.completions.create(
-            model=self.model_name,
-            messages=self.messages,
-            tools=self.tools
+            model=self.model_name, messages=self.messages, tools=self.tools
         )
         # OpenAI returns tool_calls in response.choices[0].message.tool_calls
         try:
