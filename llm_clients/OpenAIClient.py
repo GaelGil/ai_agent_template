@@ -1,7 +1,7 @@
 from openai import OpenAI
 
 
-class OpenAIModel:
+class OpenAIClient:
     def __init__(self, api_key: str) -> None:
         """
         Args:
