@@ -31,9 +31,9 @@ class PlannerAgent:
     def plan(self, query: str):
         """ """
         self.add_messages(query=query)
-        response = self.llm.responses.create(
+        response = self.llm.responses.parse(
             model=self.model_name,
-            messages=self.messages,
+            input=self.messages,
             tools=self.tools,
             text_format=Plan,
         )
