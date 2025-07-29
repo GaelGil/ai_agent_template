@@ -125,11 +125,7 @@ async def process(
         # Stream the LLM's response
         plan = planer.plan(content)
         plan_parsed: Plan = plan.output_parsed
-        print(f"PLAN RESPONSE: {plan}")
-        print(f"PLAN OUTPUT PARSED: {plan_parsed}")
-        print(f"PLAN DESCRIPTION: {plan_parsed.description}")
-        print(f"PLAN TASKS: {plan_parsed.tasks}")
-        res = orchestator.execute_plan(plan)
+        res = orchestator.execute_plan(plan_parsed)
         print(f"RES: {res}")
 
         # async for chunk in agent.stream(content):
