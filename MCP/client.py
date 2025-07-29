@@ -79,14 +79,12 @@ class MCPClient:
             openai_tools.append(
                 {
                     "type": "function",
-                    "function": {
-                        "name": tool.name,
-                        "description": tool.description,
-                        "parameters": {
-                            "type": "object",
-                            "properties": tool.inputSchema.get("properties", {}),
-                            "required": tool.inputSchema.get("required", []),
-                        },
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": {
+                        "type": "object",
+                        "properties": tool.inputSchema.get("properties", {}),
+                        "required": tool.inputSchema.get("required", []),
                     },
                 }
             )
