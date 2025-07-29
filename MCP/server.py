@@ -17,21 +17,6 @@ mcp = FastMCP(
 )
 
 
-# a function to search inside a json file
-@mcp.tool(
-    name="search_kb",
-    description="Get the answer to the users question from the knowledge base",
-)
-def search_kb() -> dict:
-    """
-    Load the whole knowledge base from the JSON file.
-    (This is a mock function for demonstration purposes, we don't search)
-    """
-    with open("../resources/kb.json", "r") as f:
-        return json.load(f)
-
-
-# get weather tool
 @mcp.tool(
     name="get_weather",
     description="Get current temperature for provided coordinates in celsius",
@@ -44,7 +29,6 @@ def get_weather(latitude, longitude):
     return data["current"]
 
 
-# wiki search tool
 @mcp.tool(
     name="wiki_search",
     description="Get current temperature for provided coordinates in celsius",
