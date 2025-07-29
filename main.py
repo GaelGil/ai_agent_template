@@ -15,6 +15,7 @@ from MCP.client import MCPClient
 from agents.OrchestratorAgent import OrchestratorAgent
 from agents.PlannerAgent import PlannerAgent
 from utils.prompts import ORCHESTRATOR_AGENT_PROMPT, PLANNER_AGENT_PROMPT
+from utils.schemas import Plan
 import os
 from dotenv import load_dotenv
 
@@ -123,9 +124,13 @@ async def process(
         # result = None  # set result to None
         # Stream the LLM's response
         plan = planer.plan(content)
+        plan_parsed: Plan = plan.output_parsed
         print(f"PLAN RESPONSE: {plan}")
-        print(f"PLAN OUTPUT PARSED: {plan.output_parsed}")
-        orchestator.execute(plan)
+        print(f"PLAN OUTPUT PARSED: {plan_parsed}")
+        print(f"PLAN DESCRIPTION: {plan_parsed.description}")
+        print(f"PLAN TASKS: {plan_parsed.tasks}")
+        res = orchestator.execute_plan(plan)
+        print(f"RES: {res}")
 
         # async for chunk in agent.stream(content):
         #     # Print the LLM's response
