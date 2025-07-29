@@ -1,5 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import Any, Literal
+from typing import Literal, Optional, List
+
+
+class ToolArguments(BaseModel):
+    query: str = Field(description="The query or input for the tool.")
+    retries: Optional[int] = Field(default=0, description="Number of retries allowed.")
 
 
 class ToolCall(BaseModel):
@@ -7,7 +12,7 @@ class ToolCall(BaseModel):
 
     id: str = Field(description="The ID of the tool call.")
     name: str = Field(description="The name of the tool to call.")
-    arguments: dict = Field(description="The arguments to call the tool with.")
+    arguments: ToolArguments = Field(description="The arguments to call the tool with.")
 
 
 class PlannerTask(BaseModel):
@@ -17,13 +22,12 @@ class PlannerTask(BaseModel):
     description: str = Field(
         description="Clear description of the task to be executed."
     )
-    tool_calls: list[ToolCall] = Field(
-        description="A list of tool calls to be executed."
+    tool_calls: List[ToolCall] = Field(
+        default_factory=list, description="A list of tool calls to be executed."
     )
 
-    status: (
-        Any
-        | Literal[
+    status: Optional[
+        Literal[
             "input_required",
             "completed",
             "error",
@@ -32,16 +36,15 @@ class PlannerTask(BaseModel):
             "todo",
             "not_started",
         ]
-        | None
-    ) = Field(description="Status of the task", default="input_required")
+    ] = Field(default="input_required", description="Status of the task")
 
 
 class Plan(BaseModel):
     """Output schema for the Planner Agent."""
 
     original_query: str = Field(description="The original user query for context.")
-    description: str = Field(description="Clear description of the .")
-    tasks: list[PlannerTask] = Field(
+    description: str = Field(description="Clear description of the overall plan.")
+    tasks: List[PlannerTask] = Field(
         description="A list of tasks to be executed sequentially."
     )
 
