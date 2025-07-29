@@ -135,6 +135,7 @@ class OrchestratorAgent:
               Task description: {task_description} \n
               Tool suggestions: {tool_suggestions} \n
               Task status: {task_status} \n
+              Previous Task Results: {previous_task_results}
         """)
 
         response = self.llm.responses.parse(
@@ -164,7 +165,7 @@ class OrchestratorAgent:
         results = []
         prev_task_results = ""
         for i in range(len(plan.tasks)):
-            task: PlannerTask = plan[i]
+            task: PlannerTask = plan.tasks[i]
             res = self.execute_task(task, prev_task_results)
             results.append(res)
             prev_task_results = res
