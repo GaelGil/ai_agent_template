@@ -1,29 +1,18 @@
-import asyncio
 from collections.abc import AsyncGenerator
 from .PlannerAgent import PlannerAgent
 from openai import OpenAI
 from .MCP.client import MCPClient
-from typing import Optional
 import json
 
 
 class OrchestratorAgent:
-    """
-    OrchestratorAgent class.
+    """OrchestratorAgent class.
+
     Methods:
-        stream_llm(): Stream LLM response.
-        add_messages(): Add a message to the LLM's input messages.
-        stream(): Stream the process of answering a question, possibly involving tool calls.
-        extract_tools(): Extract the tool calls from the response.
-        call_tool(): Call the tool.
+
 
     Attributes:
-        model_name (str): The name of the model.
-        dev_prompt (str): The developer prompt.
-        mcp_client (MCPClient): The MCP client.
-        llm (OpenAI): The LLM client.
-        messages (list[dict]): The input messages.
-        tools (list[dict]): The tools.
+
 
     """
 
@@ -55,50 +44,6 @@ class OrchestratorAgent:
         self.tools = tools
         if self.dev_prompt:
             self.messages.append({"role": "developer", "content": self.dev_prompt})
-
-    async def stream_llm(
-        self, prompt: Optional[str] = None
-    ) -> AsyncGenerator[str, None]:
-        """Stream LLM response.
-
-        Args:
-            prompt (str, optional): The prompt to add to messages before streaming.
-                                 If None, uses existing messages.
-
-        Yields:
-            str: Chunks of the LLM response.
-        """
-        try:
-            # Add the prompt to messages if provided
-            if prompt is not None:
-                self.add_messages(prompt)
-
-            # Create the streaming response
-            stream = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.llm.responses.create(
-                    model=self.model_name, input=self.messages, stream=True
-                ),
-            )
-
-            # Stream the response
-            for event in stream:
-                yield event.text if hasattr(event, "text") else str(event)
-
-        except Exception as e:
-            print(f"Error in stream_llm: {str(e)}")
-            yield f"Error: {str(e)}"
-
-    def add_messages(self, query: str):
-        """Add a message to the LLM's input messages.
-
-        Args:
-            prompt (str): The prompt to add to the LLM's input messages.
-
-        Returns:
-            None
-        """
-        self.messages.append({"role": "user", "content": query})
 
     async def call_tool(self, tool_calls: list[dict]) -> list[dict]:
         """Receives a list of tool calls and calls the tools
@@ -344,24 +289,27 @@ class OrchestratorAgent:
         )
         # Use OpenAI's response_format structured output
         items = []
-        try:
+        try:  # Try to extract items
+            # call the LLM
             response = self.llm.chat.completions.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": extract_items_prompt}],
                 response_format={"type": "json_object"},
                 max_tokens=512,
             )
+            # get the content
             content = response.choices[0].message.content
+            # print the raw response
             print(f"[orchestrator] Raw LLM response for item extraction: {content}")
-            try:
-                parsed = json.loads(content)
-                print(f"[orchestrator] Parsed LLM response: {parsed}")
+            try:  # try to parse
+                parsed = json.loads(content)  # parse response content
+                print(f"[orchestrator] Parsed LLM response: {parsed}")  # print parsed
                 print(f"[orchestrator] Parsed LLM response type: {type(parsed)}")
                 if (
                     isinstance(parsed, dict)
                     and "items" in parsed
                     and isinstance(parsed["items"], list)
-                ):
+                ):  # if parsed is a dict with 'items' key and 'items' value is a list
                     items = parsed["items"]
                 else:
                     print(
@@ -495,22 +443,22 @@ class OrchestratorAgent:
         # 4. Mark order as 'ready'
         print(f"[orchestrator] Marking order {order_id} as 'ready'...")
 
-        with app.app_context():
-            status_updated = OrderService.update_order_status(order_id, "ready")
-        print(f"[orchestrator] Order status updated: {status_updated}")
-        # 5. Yield a summary
-        summary = f"Order {order_id} created.\n"
-        summary += f"Items added: {len(items_added)}\n"
-        for item in items_added:
-            summary += f"  - {item.get('name')} (qty: {item.get('quantity', 1)})\n"
-        if items_not_found:
-            summary += f"Items not found or not added: {len(items_not_found)}\n"
-            for item in items_not_found:
-                summary += f"  - {item.get('name')} (qty: {item.get('quantity', 1)})\n"
-        summary += f"Order status: {'ready' if status_updated else 'draft'}\nOrder workflow complete."
-        print(f"[orchestrator] Summary:\n{summary}")
-        yield {
-            "is_task_complete": True,
-            "require_user_input": False,
-            "content": summary,
-        }
+        # # with app.app_context():
+        # #     status_updated = OrderService.update_order_status(order_id, "ready")
+        # print(f"[orchestrator] Order status updated: {status_updated}")
+        # # 5. Yield a summary
+        # summary = f"Order {order_id} created.\n"
+        # summary += f"Items added: {len(items_added)}\n"
+        # for item in items_added:
+        #     summary += f"  - {item.get('name')} (qty: {item.get('quantity', 1)})\n"
+        # if items_not_found:
+        #     summary += f"Items not found or not added: {len(items_not_found)}\n"
+        #     for item in items_not_found:
+        #         summary += f"  - {item.get('name')} (qty: {item.get('quantity', 1)})\n"
+        # summary += f"Order status: {'ready' if status_updated else 'draft'}\nOrder workflow complete."
+        # print(f"[orchestrator] Summary:\n{summary}")
+        # yield {
+        #     "is_task_complete": True,
+        #     "require_user_input": False,
+        #     "content": summary,
+        # }
