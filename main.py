@@ -9,12 +9,16 @@ and uses the agent framework to process orders based on the email content.
 import asyncio
 import logging
 
-from pathlib import Path
 from typing import Tuple
-from openai import OpenAI
+from llm_clients.OpenAIClient import OpenAIClient
 from MCP.client import MCPClient
 from OrchestratorAgent import OrchestratorAgent
-from utils.prompts import SYSTEM_PROMPT
+from PlannerAgent import PlannerAgent
+from utils.prompts import ORCHESTRATOR_AGENT_PROMPT, PLANNER_AGENT_PROMPT
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -22,13 +26,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Default directories
-BASE_DIR = Path(__file__).parent.parent.parent.parent
-TEST_EMAILS_DIR = BASE_DIR / "test_emails"
-PROCESSED_EMAILS_FILE = BASE_DIR / "processed_emails.json"
 
-
-async def initialize_agent_service() -> Tuple[OrchestratorAgent, MCPClient]:
+async def initialize_agent_service() -> Tuple[
+    OrchestratorAgent, PlannerAgent, MCPClient
+]:
     """Initialize and return the OrchestratorAgent with MCP client integration.
 
     Returns:
@@ -44,10 +45,8 @@ async def initialize_agent_service() -> Tuple[OrchestratorAgent, MCPClient]:
         logger.info(f"Loaded {len(tools)} tools from MCP")
 
         logger.info("Initializing OpenAI client...")
-        openai_client = OpenAI()
-
-        # Initialize messages with system prompt
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        # openai_client = OpenAI(os.getenv("OPENAI_API_KEY"))
+        llm = OpenAIClient(api_key=os.getenv("OPENAI_API_KEY")).get_client()
 
         # Ensure tools is a list and log its structure
         if not isinstance(tools, list):
@@ -65,16 +64,25 @@ async def initialize_agent_service() -> Tuple[OrchestratorAgent, MCPClient]:
                 tool.copy() if hasattr(tool, "copy") else tool for tool in tools
             ]
 
-            agent = OrchestratorAgent(
-                dev_prompt=SYSTEM_PROMPT,
+            orechestrator = OrchestratorAgent(
+                dev_prompt=ORCHESTRATOR_AGENT_PROMPT,
                 mcp_client=mcp_client,
-                llm=openai_client,
-                messages=messages.copy(),
+                llm=llm,
+                messages=[],
                 tools=agent_tools,
                 model_name="gpt-4.1-mini",
             )
+
             logger.info("Successfully initialized OrchestratorAgent")
-            return agent, mcp_client
+            planner = PlannerAgent(
+                dev_prompt=PLANNER_AGENT_PROMPT,
+                mcp_client=mcp_client,
+                llm=llm,
+                messages=[],
+                tools=agent_tools,
+                model_name="gpt-4.1-mini",
+            )
+            return orechestrator, planner, mcp_client
 
         except Exception as agent_init_error:
             logger.error(
@@ -97,7 +105,9 @@ async def initialize_agent_service() -> Tuple[OrchestratorAgent, MCPClient]:
         raise
 
 
-async def process_(agent: OrchestratorAgent, content: str) -> bool:
+async def process(
+    orchestator: OrchestratorAgent, planer: PlannerAgent, content: str
+) -> bool:
     """
     Process a single email file and place orders based on its content using the agentic workflow.
     Args:
@@ -110,30 +120,34 @@ async def process_(agent: OrchestratorAgent, content: str) -> bool:
     # Try to process the email using agent
     try:
         # Use the agentic workflow: pass the full email to the agent's stream method
-        result = None  # set result to None
+        # result = None  # set result to None
         # Stream the LLM's response
-        async for chunk in agent.stream(content):
-            # Print the LLM's response
-            if "content" in chunk and chunk["content"]:
-                print(chunk["content"], end="\n", flush=True)
-            # Check if the task is complete
-            if chunk.get("is_task_complete", False):
-                result = chunk  # set result to the last chunk
-                logger.info("Agentic workflow complete.")
-                break
-            # if result is not None and "content" in result and "order" in result["content"].lower():
-            if (
-                result
-                and result.get("content")
-                and "order" in result.get("content").lower()
-            ):
-                # makr the email as processed
+        plan = planer.plan(content)
+        print(plan)
+        # orchestator.execute(plan)
 
-                print(f"\n{'=' * 80}\nSuccessfully processed: \n{'=' * 80}")
-                return True  # Return True
-            else:
-                logger.warning("Agentic workflow did not complete successfully for:")
-                return False
+        # async for chunk in agent.stream(content):
+        #     # Print the LLM's response
+        #     if "content" in chunk and chunk["content"]:
+        #         print(chunk["content"], end="\n", flush=True)
+        #     # Check if the task is complete
+        #     if chunk.get("is_task_complete", False):
+        #         result = chunk  # set result to the last chunk
+        #         logger.info("Agentic workflow complete.")
+        #         break
+        #     # if result is not None and "content" in result and "order" in result["content"].lower():
+        #     if (
+        #         result
+        #         and result.get("content")
+        #         and "order" in result.get("content").lower()
+        #     ):
+        #         # makr the email as processed
+
+        #         print(f"\n{'=' * 80}\nSuccessfully processed: \n{'=' * 80}")
+        #         return True  # Return True
+        #     else:
+        #         logger.warning("Agentic workflow did not complete successfully for:")
+        #         return False
     except Exception as process_error:  # Exception as process_error
         logger.error(
             f"Error in agentic email processing: {str(process_error)}", exc_info=True
@@ -150,16 +164,16 @@ async def process_emails() -> None:
     """
 
     # Initialize agent service
-    content = "..."
+    content = "write an essay on the culture impact of the internet"
     try:
-        agent, mcp_client = await initialize_agent_service()
+        orchestrator, planner, mcp_client = await initialize_agent_service()
 
         # Process only the oldest unprocessed email
         # email_to_process = unprocessed_emails[0]
         # logger.info(f"Processing email: {email_to_process.name}")
 
         # Process the email (success is a bool)
-        success = await process_(agent, content)
+        success = await process(orchestrator, planner, content)
 
         if success:
             logger.info(f"Successfully processed content: {content}")

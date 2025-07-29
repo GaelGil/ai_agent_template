@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
-from .PlannerAgent import PlannerAgent
+from PlannerAgent import PlannerAgent
 from openai import OpenAI
-from .MCP.client import MCPClient
+from MCP.client import MCPClient
 import json
 
 
@@ -221,6 +221,10 @@ class OrchestratorAgent:
             f"[extract_tools] Successfully extracted {len(internal_calls)} tool calls."
         )
         return internal_calls
+
+    def execute(self, plan) -> list[dict]:
+        """ """
+        pass
 
     async def decide(self, question: str) -> AsyncGenerator[list, None]:
         """
