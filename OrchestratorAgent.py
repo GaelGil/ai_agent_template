@@ -5,7 +5,6 @@ from openai import OpenAI
 from .MCP.client import MCPClient
 from typing import Optional
 import json
-from .MCP.server import app
 
 
 class OrchestratorAgent:
@@ -14,7 +13,6 @@ class OrchestratorAgent:
     Methods:
         stream_llm(): Stream LLM response.
         add_messages(): Add a message to the LLM's input messages.
-        decide(): Decide which tool to use to answer the question.
         stream(): Stream the process of answering a question, possibly involving tool calls.
         extract_tools(): Extract the tool calls from the response.
         call_tool(): Call the tool.
@@ -46,7 +44,6 @@ class OrchestratorAgent:
             mcp_client (MCPClient): The MCP client.
             llm (OpenAI): The LLM client.
             messages (list[dict]): The input messages.
-            max_turns (int): The maximum number of turns.
             tools (list[dict]): The tools.
             model_name (str): The name of the model.
         """
@@ -280,9 +277,7 @@ class OrchestratorAgent:
         )
         return internal_calls
 
-    async def decide(
-        self, question: str, called_tools: list[dict] | None = None
-    ) -> AsyncGenerator[list, None]:
+    async def decide(self, question: str) -> AsyncGenerator[list, None]:
         """
         Prompt the PlannerAgent and yield the tool call response as a list (not JSON string).
         """
