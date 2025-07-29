@@ -7,11 +7,10 @@ and uses the agent framework to process orders based on the email content.
 """
 
 import asyncio
-import json
 import logging
-from datetime import datetime, timezone
+
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Tuple
 from openai import OpenAI
 from MCP.client import MCPClient
 from OrchestratorAgent import OrchestratorAgent
@@ -98,38 +97,7 @@ async def initialize_agent_service() -> Tuple[OrchestratorAgent, MCPClient]:
         raise
 
 
-def load_processed_emails() -> Dict[str, str]:
-    """Load the set of already processed emails."""
-    if not PROCESSED_EMAILS_FILE.exists():
-        return {}
-
-    try:
-        with open(PROCESSED_EMAILS_FILE, "r") as f:
-            return json.load(f)
-    except Exception as e:
-        logger.error(f"Error loading processed emails: {str(e)}")
-        return {}
-
-
-def mark_email_processed(email_path: str, status: str = "completed") -> None:
-    """Mark an email as processed with the given status."""
-    processed = load_processed_emails()
-    processed[email_path] = {
-        "status": status,
-        "processed_at": datetime.now(timezone.utc).isoformat(),
-    }
-
-    try:
-        with open(PROCESSED_EMAILS_FILE, "w") as f:
-            json.dump(processed, f, indent=2)
-    except Exception as e:
-        logger.error(f"Error saving processed emails: {str(e)}")
-
-
-# Remove process_order_items and update process_email_file to use agent.stream
-
-
-async def process_email_file(agent: OrchestratorAgent, file_path: Path) -> bool:
+async def process_(agent: OrchestratorAgent, content: str) -> bool:
     """
     Process a single email file and place orders based on its content using the agentic workflow.
     Args:
@@ -139,35 +107,20 @@ async def process_email_file(agent: OrchestratorAgent, file_path: Path) -> bool:
     Returns:
         bool: True if processing was successful, False otherwise
     """
-    try:  # Try to process the email
-        logger.info(f"Starting to process email file: {file_path}")
-        try:  # Try to read the email
-            with open(file_path, "r", encoding="utf-8") as f:
-                email_content = f.read()
-            logger.info(
-                f"Successfully read email content, length: {len(email_content)} characters"
-            )
-        except Exception as e:
-            logger.error(
-                f"Failed to read email file {file_path}: {str(e)}", exc_info=True
-            )
-            mark_email_processed(str(file_path), f"read_error: {str(e)}")
-            return False
-        print(f"\n{'=' * 80}\nProcessing email: {file_path.name}\n{'=' * 80}")
-
-        try:  # Try to process the email using agent
-            # Use the agentic workflow: pass the full email to the agent's stream method
-            result = None  # set result to None
-            # Stream the LLM's response
-            async for chunk in agent.stream(email_content):
-                # Print the LLM's response
-                if "content" in chunk and chunk["content"]:
-                    print(chunk["content"], end="\n", flush=True)
-                # Check if the task is complete
-                if chunk.get("is_task_complete", False):
-                    result = chunk  # set result to the last chunk
-                    logger.info("Agentic workflow complete.")
-                    break
+    # Try to process the email using agent
+    try:
+        # Use the agentic workflow: pass the full email to the agent's stream method
+        result = None  # set result to None
+        # Stream the LLM's response
+        async for chunk in agent.stream(content):
+            # Print the LLM's response
+            if "content" in chunk and chunk["content"]:
+                print(chunk["content"], end="\n", flush=True)
+            # Check if the task is complete
+            if chunk.get("is_task_complete", False):
+                result = chunk  # set result to the last chunk
+                logger.info("Agentic workflow complete.")
+                break
             # if result is not None and "content" in result and "order" in result["content"].lower():
             if (
                 result
@@ -175,84 +128,43 @@ async def process_email_file(agent: OrchestratorAgent, file_path: Path) -> bool:
                 and "order" in result.get("content").lower()
             ):
                 # makr the email as processed
-                mark_email_processed(str(file_path), "completed")
-                logger.info(f"Successfully processed email: {file_path.name}")
-                print(
-                    f"\n{'=' * 80}\nSuccessfully processed: {file_path.name}\n{'=' * 80}"
-                )
+
+                print(f"\n{'=' * 80}\nSuccessfully processed: \n{'=' * 80}")
                 return True  # Return True
             else:
-                logger.warning(
-                    f"Agentic workflow did not complete successfully for: {file_path.name}"
-                )
-                mark_email_processed(str(file_path), "agentic_incomplete")
+                logger.warning("Agentic workflow did not complete successfully for:")
                 return False
-        except Exception as process_error:  # Exception as process_error
-            logger.error(
-                f"Error in agentic email processing: {str(process_error)}",
-                exc_info=True,
-            )
-            mark_email_processed(str(file_path), f"process_error: {str(process_error)}")
-            return False
-    except Exception as e:  # Exception as e
-        logger.critical(
-            f"Unexpected error in process_email_file: {str(e)}", exc_info=True
+    except Exception as process_error:  # Exception as process_error
+        logger.error(
+            f"Error in agentic email processing: {str(process_error)}", exc_info=True
         )
-        mark_email_processed(str(file_path), f"unexpected_error: {str(e)}")
         return False
 
 
-async def process_emails(directory: Optional[Path] = None) -> None:
+async def process_emails() -> None:
     """
     Process .md files in the specified directory as test emails, one at a time.
 
     Args:
         directory: Directory containing test email files. Defaults to TEST_EMAILS_DIR.
     """
-    if directory is None:
-        directory = TEST_EMAILS_DIR
-
-    # Ensure the directory exists
-    if not directory.exists() or not directory.is_dir():
-        logger.error(f"Test emails directory not found: {directory}")
-        return
-
-    # Find all .md files in the directory
-    email_files = list(directory.glob("*.md"))
-
-    # If no .md files found, log a warning
-    if not email_files:
-        logger.warning(f"No .md files found in {directory}")
-        return
-
-    # Load already processed emails
-    processed_emails = load_processed_emails()
-
-    # Filter out already processed emails and sort by modification time (oldest first)
-    unprocessed_emails = [f for f in email_files if str(f) not in processed_emails]
-    unprocessed_emails.sort(key=lambda f: f.stat().st_mtime)
-
-    if not unprocessed_emails:
-        logger.info("No unprocessed emails found.")
-        return
-
-    logger.info(f"Found {len(unprocessed_emails)} unprocessed email(s).")
 
     # Initialize agent service
+    content = "..."
     try:
         agent, mcp_client = await initialize_agent_service()
 
         # Process only the oldest unprocessed email
-        email_to_process = unprocessed_emails[0]
-        logger.info(f"Processing email: {email_to_process.name}")
+        # email_to_process = unprocessed_emails[0]
+        # logger.info(f"Processing email: {email_to_process.name}")
 
         # Process the email (success is a bool)
-        success = await process_email_file(agent, email_to_process)
+        success = await process_(agent, content)
 
         if success:
-            logger.info(f"Successfully processed email: {email_to_process.name}")
+            logger.info(f"Successfully processed content: {content}")
         else:
-            logger.warning(f"Failed to process email: {email_to_process.name}")
+            logger.warning(f"Failed to process content: {content}")
 
     except Exception as e:
         logger.error(f"Error in email processing workflow: {str(e)}")
@@ -263,8 +175,5 @@ async def process_emails(directory: Optional[Path] = None) -> None:
 
 
 if __name__ == "__main__":
-    # Create necessary directories if they don't exist
-    TEST_EMAILS_DIR.mkdir(exist_ok=True, parents=True)
-
     # Run the async main function
     asyncio.run(process_emails())

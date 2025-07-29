@@ -1,48 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Any, List, Literal
-
-
-class DecideResponse(BaseModel):
-    thoughts: list[str] = Field(description="List of thoughts")
-    selected_tools: list[dict] = Field(description="List of selected tools")
-
-    @classmethod
-    def render(
-        cls, tools: list[dict], question: str, called_tools: list[dict], **kwargs
-    ) -> str:
-        """Render the prompt for deciding which tools to use."""
-        tool_descriptions = "\n".join(
-            f"- {tool['name']}: {tool.get('description', 'No description')}"
-            for tool in tools
-        )
-
-        called_tools_str = "No tools have been called yet."
-        if called_tools:
-            called_tools_str = "\n".join(
-                f"- {tool.get('name', 'Unknown')}: {tool.get('result', 'No result')}"
-                for tool in called_tools
-            )
-
-        return f"""
-        You are an AI assistant that helps decide which tools to use to answer a question.
-        
-        Available tools:
-        {tool_descriptions}
-        
-        Previously called tools and their results:
-        {called_tools_str}
-        
-        Question: {question}
-        
-        Based on the question and previous tool results, which tools should be used next?
-        Respond with a JSON object containing 'thoughts' and 'selected_tools'.
-        """
-
-
-class CalledToolHistoryResponse(BaseModel):
-    question: str = Field(description="The question to answer")
-    tools: List[dict] = Field(description="List of tools")
-    called_tools: List[dict] = Field(description="List of called tools")
+from typing import Any, Literal
 
 
 class PlannerTask(BaseModel):
@@ -102,15 +59,6 @@ class ToolResult(BaseModel):
     result: str = Field(description="The result of the tool execution.")
     is_error: bool = Field(
         default=False, description="Whether the tool execution resulted in an error."
-    )
-
-
-class Plan(BaseModel):
-    """Output schema for the Planner Agent with tool support."""
-
-    response: str = Field(description="The agent's response to the user.")
-    tool_calls: List[ToolCall] = Field(
-        default_factory=list, description="List of tool calls to execute, if any."
     )
 
 
