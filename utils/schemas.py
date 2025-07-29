@@ -25,8 +25,8 @@ class PlannerTask(BaseModel):
     # tool_calls: List[ToolCall] = Field(
     #     default_factory=list, description="A list of tool calls to be executed."
     # )
-    needed: str = Field(
-        description="A description of what is needed to complete the task. ie, research, serach the web etc"
+    tool_suggestions: str = Field(
+        description="A list of tool suggestions to be executed."
     )
 
     status: Optional[
