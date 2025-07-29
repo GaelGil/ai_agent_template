@@ -49,23 +49,6 @@ class Plan(BaseModel):
     )
 
 
-class ToolFunction(BaseModel):
-    """Represents a function call from the LLM."""
-
-    name: str = Field(description="The name of the function to call.")
-    arguments: str = Field(
-        description="The arguments to call the function with, as a JSON string."
-    )
-
-
-class ToolCall(BaseModel):
-    """Represents a tool call request from the LLM."""
-
-    id: str = Field(description="The ID of the tool call.")
-    type: str = Field(default="function", description="The type of the tool call.")
-    function: ToolFunction = Field(description="The function details.")
-
-
 class ToolResult(BaseModel):
     """Represents the result of a tool execution."""
 
@@ -86,12 +69,3 @@ class ResponseFormat(BaseModel):
     content: Plan = Field(
         description="List of tasks when the code search plan is generated"
     )
-
-
-class ServerConfig(BaseModel):
-    """Server Confgiguration."""
-
-    host: str
-    port: int
-    transport: str
-    url: str
