@@ -129,9 +129,7 @@ def mark_email_processed(email_path: str, status: str = "completed") -> None:
 # Remove process_order_items and update process_email_file to use agent.stream
 
 
-async def process_email_file(
-    agent: OrchestratorAgent, mcp_client: MCPClient, file_path: Path
-) -> bool:
+async def process_email_file(agent: OrchestratorAgent, file_path: Path) -> bool:
     """
     Process a single email file and place orders based on its content using the agentic workflow.
     Args:
@@ -249,7 +247,7 @@ async def process_emails(directory: Optional[Path] = None) -> None:
         logger.info(f"Processing email: {email_to_process.name}")
 
         # Process the email (success is a bool)
-        success = await process_email_file(agent, mcp_client, email_to_process)
+        success = await process_email_file(agent, email_to_process)
 
         if success:
             logger.info(f"Successfully processed email: {email_to_process.name}")
