@@ -150,7 +150,9 @@ class OrchestratorAgent:
             tool_choice="auto",
             text_format=ToolCall,
         )
+
         tool_call: ToolCall = response.output_parsed
+        print(f"RESPONSE: {response}")
         print(f"Tool call: {tool_call}")
         print(f"Tool call type: {type(tool_call)}")
         print(f"Tool call name: {tool_call.name}")
