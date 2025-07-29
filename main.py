@@ -12,8 +12,8 @@ import logging
 from typing import Tuple
 from llm_clients.OpenAIClient import OpenAIClient
 from MCP.client import MCPClient
-from OrchestratorAgent import OrchestratorAgent
-from PlannerAgent import PlannerAgent
+from agents.OrchestratorAgent import OrchestratorAgent
+from agents.PlannerAgent import PlannerAgent
 from utils.prompts import ORCHESTRATOR_AGENT_PROMPT, PLANNER_AGENT_PROMPT
 import os
 from dotenv import load_dotenv
@@ -76,12 +76,12 @@ async def initialize_agent_service() -> Tuple[
             logger.info("Successfully initialized OrchestratorAgent")
             planner = PlannerAgent(
                 dev_prompt=PLANNER_AGENT_PROMPT,
-                mcp_client=mcp_client,
                 llm=llm,
                 messages=[],
                 tools=agent_tools,
                 model_name="gpt-4.1-mini",
             )
+            logger.info("Successfully initialized PlannerAgent")
             return orechestrator, planner, mcp_client
 
         except Exception as agent_init_error:
@@ -123,8 +123,9 @@ async def process(
         # result = None  # set result to None
         # Stream the LLM's response
         plan = planer.plan(content)
-        print(plan)
-        # orchestator.execute(plan)
+        print(f"PLAN RESPONSE: {plan}")
+        print(f"PLAN OUTPUT PARSED: {plan.output_parsed}")
+        orchestator.execute(plan)
 
         # async for chunk in agent.stream(content):
         #     # Print the LLM's response
