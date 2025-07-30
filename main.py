@@ -21,6 +21,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -120,6 +121,7 @@ async def process(
     """
     # Try to process the email using agent
     try:
+        print("first")
         plan = planer.plan(content)
         plan_parsed: Plan = plan.output_parsed
         print(f"plan: {plan}")
@@ -146,7 +148,7 @@ async def process_emails() -> None:
     content = "write an essay on the culture impact of the internet"
     try:
         orchestrator, planner, mcp_client = await initialize_agent_service()
-
+        print(orchestrator.tools)
         # Process only the oldest unprocessed email
         # email_to_process = unprocessed_emails[0]
         # logger.info(f"Processing email: {email_to_process.name}")
