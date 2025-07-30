@@ -120,36 +120,13 @@ async def process(
     """
     # Try to process the email using agent
     try:
-        # Use the agentic workflow: pass the full email to the agent's stream method
-        # result = None  # set result to None
-        # Stream the LLM's response
         plan = planer.plan(content)
         plan_parsed: Plan = plan.output_parsed
-        res = orchestator.execute_plan(plan_parsed)
+        print(f"plan: {plan}")
+        print(f"plan.type: {type(plan)}")
+        res = await orchestator.execute_plan(plan_parsed)
         print(f"RES: {res}")
 
-        # async for chunk in agent.stream(content):
-        #     # Print the LLM's response
-        #     if "content" in chunk and chunk["content"]:
-        #         print(chunk["content"], end="\n", flush=True)
-        #     # Check if the task is complete
-        #     if chunk.get("is_task_complete", False):
-        #         result = chunk  # set result to the last chunk
-        #         logger.info("Agentic workflow complete.")
-        #         break
-        #     # if result is not None and "content" in result and "order" in result["content"].lower():
-        #     if (
-        #         result
-        #         and result.get("content")
-        #         and "order" in result.get("content").lower()
-        #     ):
-        #         # makr the email as processed
-
-        #         print(f"\n{'=' * 80}\nSuccessfully processed: \n{'=' * 80}")
-        #         return True  # Return True
-        #     else:
-        #         logger.warning("Agentic workflow did not complete successfully for:")
-        #         return False
     except Exception as process_error:  # Exception as process_error
         logger.error(
             f"Error in agentic email processing: {str(process_error)}", exc_info=True
