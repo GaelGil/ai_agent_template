@@ -10,7 +10,7 @@ import asyncio
 import logging
 
 from typing import Tuple
-from llm_clients.OpenAIClient import OpenAIClient
+from utils.OpenAIClient import OpenAIClient
 from MCP.client import MCPClient
 from agents.OrchestratorAgent import OrchestratorAgent
 from agents.PlannerAgent import PlannerAgent
