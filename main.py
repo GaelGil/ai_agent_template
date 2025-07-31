@@ -12,9 +12,9 @@ import logging
 from typing import Tuple
 from utils.OpenAIClient import OpenAIClient
 from MCP.client import MCPClient
-from agents.OrchestratorAgent import OrchestratorAgent
+from utils.Executor import Executor
 from agents.PlannerAgent import PlannerAgent
-from utils.prompts import ORCHESTRATOR_AGENT_PROMPT, PLANNER_AGENT_PROMPT
+from utils.prompts import PLANNER_AGENT_PROMPT
 from utils.schemas import Plan
 import os
 from dotenv import load_dotenv
@@ -29,9 +29,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def initialize_agent_service() -> Tuple[
-    OrchestratorAgent, PlannerAgent, MCPClient
-]:
+async def initialize_agent_service() -> Tuple[Executor, PlannerAgent, MCPClient]:
     """Initialize and return the OrchestratorAgent with MCP client integration.
 
     Returns:
@@ -66,16 +64,11 @@ async def initialize_agent_service() -> Tuple[
                 tool.copy() if hasattr(tool, "copy") else tool for tool in tools
             ]
 
-            orechestrator = OrchestratorAgent(
-                dev_prompt=ORCHESTRATOR_AGENT_PROMPT,
+            orechestrator = Executor(
                 mcp_client=mcp_client,
-                llm=llm,
-                messages=[],
-                tools=agent_tools,
-                model_name="gpt-4.1-mini",
             )
 
-            logger.info("Successfully initialized OrchestratorAgent")
+            logger.info("Successfully initialized Executor")
             planner = PlannerAgent(
                 dev_prompt=PLANNER_AGENT_PROMPT,
                 llm=llm,
@@ -107,9 +100,7 @@ async def initialize_agent_service() -> Tuple[
         raise
 
 
-async def process(
-    orchestator: OrchestratorAgent, planer: PlannerAgent, content: str
-) -> bool:
+async def process(executor: Executor, planer: PlannerAgent, content: str) -> bool:
     """
     Process a single email file and place orders based on its content using the agentic workflow.
     Args:
@@ -126,7 +117,7 @@ async def process(
         plan_parsed: Plan = plan.output_parsed
         print(f"plan: {plan}")
         print(f"plan.type: {type(plan)}")
-        res = await orchestator.execute_plan(plan_parsed)
+        res = await executor.execute_plan(plan_parsed)
         print(f"RES: {res}")
 
     except Exception as process_error:  # Exception as process_error
