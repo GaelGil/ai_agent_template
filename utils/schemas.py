@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Literal, Optional, List
+from typing import Literal, Optional, List, Any
 
 
 class ToolArguments(BaseModel):
@@ -12,7 +12,9 @@ class ToolCall(BaseModel):
 
     id: str = Field(description="The ID of the tool call.")
     name: str = Field(description="The name of the tool to call.")
-    arguments: ToolArguments = Field(description="The arguments to call the tool with.")
+    arguments: dict[str, Any] = Field(
+        description="The arguments to pass to the tool. [argument: value]"
+    )
 
 
 class ToolCalls(BaseModel):
