@@ -5,8 +5,17 @@ import datetime
 from mcp.server.fastmcp import FastMCP
 import xml.etree.ElementTree as ET
 from mcp.server.fastmcp.utilities.logging import get_logger
+from openai import OpenAI
+from dotenv import load_dotenv
+from pathlib import Path
+import os
+
+load_dotenv(Path("../.env"))
+
 
 ARXIV_NAMESPACE = "{http://www.w3.org/2005/Atom}"
+LLM = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 logger = get_logger(__name__)
 
 
@@ -68,6 +77,60 @@ def save_txt(text: str, filename: str = "output.txt") -> str:
         f.write(formatted_text)
 
     return f"Data successfully saved to {filename}"
+
+
+@mcp.tool(
+    name="writer_tool",
+    description="Save JSON data to a .json file",
+)
+def writer_tool(query: str, context: str) -> str:
+    """"""
+    response = LLM.responses.parse(
+        model="gpt-4.1-mini",
+        input=[
+            {
+                "role": "developer",
+                "content": f"""
+                        You are an expert essay writer, you take in essay writing request on a given topic and write it.
+                        Here is some useful information about the request:
+                        {context}
+                        """,
+            },
+            {
+                "role": "user",
+                "content": query,
+            },
+        ],
+        text_format=str,
+    )
+    return response
+
+
+@mcp.tool(
+    name="review_tool",
+    description="Save JSON data to a .json file",
+)
+def review_tool(essay: str, context: str) -> str:
+    """"""
+    response = LLM.responses.parse(
+        model="gpt-4.1-mini",
+        input=[
+            {
+                "role": "developer",
+                "content": f"""
+                        You are an expert essay reviewer, you take in essay and review it.
+                        Here is some useful information about the request:
+                        {context}
+                        """,
+            },
+            {
+                "role": "user",
+                "content": essay,
+            },
+        ],
+        text_format=str,
+    )
+    return response
 
 
 @mcp.tool(name="arxiv_search", description="Search arxiv")
