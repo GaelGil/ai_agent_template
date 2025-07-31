@@ -40,7 +40,7 @@ class PlannerAgent:
             query (str): The request of the user.
 
         Returns:
-            Plan: The plan to complete the request of the user.
+            ParsedResponse[Plan]: The plan to complete the request of the user.
         """
         self.add_messages(query=query)
         response = self.llm.responses.parse(
