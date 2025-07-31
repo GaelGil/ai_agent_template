@@ -40,7 +40,7 @@ def get_weather(latitude, longitude):
 
 @mcp.tool(
     name="wiki_search",
-    description="Get current temperature for provided coordinates in celsius",
+    description="Search wikipedia for the given query and returns a summary.",
 )
 def wiki_search(query: str, sentences: int = 2) -> str:
     """
@@ -81,7 +81,7 @@ def save_txt(text: str, filename: str = "output.txt") -> str:
 
 @mcp.tool(
     name="writer_tool",
-    description="Save JSON data to a .json file",
+    description="Writes an essay on a given topic",
 )
 def writer_tool(query: str, context: str) -> str:
     """"""
@@ -108,9 +108,9 @@ def writer_tool(query: str, context: str) -> str:
 
 @mcp.tool(
     name="review_tool",
-    description="Save JSON data to a .json file",
+    description="Reviews content on a given topic",
 )
-def review_tool(essay: str, context: str) -> str:
+def review_tool(content: str, context: str) -> str:
     """"""
     response = LLM.responses.parse(
         model="gpt-4.1-mini",
@@ -118,14 +118,41 @@ def review_tool(essay: str, context: str) -> str:
             {
                 "role": "developer",
                 "content": f"""
-                        You are an expert essay reviewer, you take in essay and review it.
-                        Here is some useful information about the request:
-                        {context}
+                        You are an expert essay reviewer, you take in essay and previous tool results (context) and review it.
+                        Here is the context: {context}
                         """,
             },
             {
                 "role": "user",
-                "content": essay,
+                "content": content,
+            },
+        ],
+        text_format=str,
+    )
+    return response
+
+
+@mcp.tool(
+    name="assemble_content",
+    description="Assamble content from previous tools (context) and current content state",
+)
+def assemble_content(content: str, context: str) -> str:
+    """"""
+    response = LLM.responses.parse(
+        model="gpt-4.1-mini",
+        input=[
+            {
+                "role": "developer",
+                "content": f"""
+                        You are an expert essay assembler, you take in essay at its current state
+                        and previous tool results (context).
+                        You assemble the essay based on context and the current essay state.
+                        Here is the context: {context}
+                        """,
+            },
+            {
+                "role": "user",
+                "content": content,
             },
         ],
         text_format=str,
