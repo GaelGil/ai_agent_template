@@ -89,9 +89,7 @@ class Executor:
                     "message": f"Expected list of tool calls, got {type(tool_calls).__name__}",
                 }
             ]
-        print(f"CALLING TOOLS: {tool_calls}")
-        results = []  # Tool call results
-        print(f"TOOL_CALLS: {tool_calls}")
+        results = []  # Hold tool call results
         for tool in tool_calls:  # For each tool
             try:  # Try to call the tool
                 if not isinstance(tool, dict):  # If tool is not a dict return error
@@ -103,11 +101,8 @@ class Executor:
                     )
                     continue
                 # Extract tool name and arguments
-                name = tool["name"]
-                arguments = tool["arguments"]
-                print(f"NAME: {name}")
-                print(f"ARGUMENTS: {arguments}")
-                print()
+                name = tool["name"]  # str
+                arguments = tool["arguments"]  # dict
                 # If tool name is missing return error
                 if not name:
                     results.append(
@@ -130,7 +125,6 @@ class Executor:
 
             # Handle exceptions
             except Exception as e:
-                print("AT EXCEPTION")
                 results.append(
                     {
                         "error": True,
@@ -138,7 +132,6 @@ class Executor:
                         "message": f"Error calling tool: {str(e)}",
                     }
                 )
-        print(f"RESULTS: {results}")
         return results
 
     async def execute_task(self, task: PlannerTask) -> list[dict]:
@@ -154,25 +147,30 @@ class Executor:
                 - result: The result of the tool call.
                 - error: A boolean indicating whether an error occurred.
         """
-
-        # print current task
-        self.print_task(task)
-        tool_calls = []  # var to hold tool_calls in current task
+        self.print_task(task)  # Print current task
+        tool_calls = []  # Hold tool_calls in current task
         for i in range(len(task.tool_calls)):  # for every tool call in the task
             tool_call = task.tool_calls[i]  # select the tool call
             tools = self.extract_tools(
                 tool_call
-            )  # extract the tool into {name: tool_name, arguments: {...}
+            )  # extract the tool into {name: tool_name, arguments: {...}}
             tool_calls.append(tools)  # add tool to tool_Calls list
 
         tool_call_results = await self.call_tool(
             tool_calls
         )  # call the tools, should return [{'result': result} ...]
-        results = [result["result"] for result in tool_call_results]
-
+        results = [
+            result["result"] for result in tool_call_results
+        ]  # extract the results
         return results
 
     def assemble_content(self) -> str:
+        """
+        Assemble the from the previous task results
+
+        Returns:
+            str: The assembled content
+        """
         paragraphs = []
         for entry in self.previous_task_results:
             if isinstance(entry, dict):
@@ -182,18 +180,32 @@ class Executor:
         return "\n\n".join(paragraphs)
 
     def extract_tools(self, tool_call):
-        """ """
-        name = tool_call.name.split(".")[-1]
-        tool = {"name": name, "arguments": {}}
-        tool_call_keys = tool_call.arguments.keys
-        tool_call_values = tool_call.arguments.values
-        for i in range(len(tool_call_values)):
-            if name == "review_tool" or name == "assemble_content":
-                content = self.assemble_content()
-                tool["arguments"]["essay"] = content
-                tool["arguments"]["context"] = str(self.previous_task_results)
+        """Extract the tool into {name: tool_name, arguments: {...}}
 
+        Args:
+            tool_call: The tool call to extract.
+
+        Returns:
+            dict: The extracted tool.
+        """
+        name = tool_call.name.split(".")[-1]  # get name
+        tool = {"name": name, "arguments": {}}  # set name and empty args
+        # Select the keys (name of the argument)
+        tool_call_keys = tool_call.arguments.keys
+        # Select the values (value of the argument)
+        tool_call_values = tool_call.arguments.values
+        # Since same length only iterate one list
+        for i in range(len(tool_call_values)):  # for each argument
+            # if name is review_tool or assemble_content
+            if name == "review_tool" or name == "assemble_content":
+                # assemble content
+                content = self.assemble_content()
+                # pass the content as the content argument (otherwise is empty)
+                tool["arguments"]["content"] = content
+                # pass the previous_task results as context argument (otherwise is empty)
+                tool["arguments"]["context"] = str(self.previous_task_results)
             else:
+                # add the key-value pair ({arg1: value1, ..., argn: valuen})
                 tool["arguments"][tool_call_keys[i]] = tool_call_values[i]
 
         return tool
