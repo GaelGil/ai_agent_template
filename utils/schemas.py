@@ -16,7 +16,10 @@ class ToolCall(BaseModel):
 
 
 class ToolCalls(BaseModel):
-    tool_calls: List[ToolCall]
+    id: int = Field(description="An ID for the tool calls")
+    tool_calls: List[ToolCall] = Field(
+        description="A list of tools to be executed sequentially."
+    )
 
 
 class PlannerTask(BaseModel):
@@ -26,13 +29,9 @@ class PlannerTask(BaseModel):
     description: str = Field(
         description="Clear description of the task to be executed."
     )
-    # tool_calls: List[ToolCall] = Field(
-    #     default_factory=list, description="A list of tool calls to be executed."
-    # )
     tool_suggestions: str = Field(
         description="A list of tool suggestions to be executed."
     )
-
     status: Optional[
         Literal[
             "input_required",
@@ -88,9 +87,6 @@ class TaskExecutionResponse(BaseModel):
     tools_sueggested: str = Field(
         description="A list of the tools suggested for the task"
     )
-    tool_calls: List[ToolCall] = Field(
-        description="A list of tool calls to be executed."
-    )
     response_type: Optional[
         Literal[
             "tool_calls",
@@ -98,6 +94,9 @@ class TaskExecutionResponse(BaseModel):
         ]
     ] = Field(
         default="input_required", description="The response type of the task execution"
+    )
+    tool_calls: List[ToolCall] = Field(
+        description="A list of tool calls to be executed. Empty if response_type is text"
     )
 
 
