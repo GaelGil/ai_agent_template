@@ -1,8 +1,5 @@
-import logging
-from openai import OpenAI  # type: ignore
 from utils.schemas import Plan
-
-logger = logging.getLogger(__name__)
+from openai import OpenAI
 
 
 class PlannerAgent:
@@ -14,23 +11,15 @@ class PlannerAgent:
         tools,
         model_name: str = "gpt-4.1-mini",
     ):
-        self.model_name = model_name
-        self.dev_prompt = dev_prompt
+        self.model_name: str = model_name
+        self.dev_prompt: str = dev_prompt
         self.llm: OpenAI = llm
-        self.messages = messages
+        self.messages: list[dict] = messages
         self.tools = tools
         if self.dev_prompt:
             self.messages.append({"role": "developer", "content": self.dev_prompt})
 
     def add_messages(self, query: str):
-        """Add a message to the messages list.
-
-        Args:
-            query (str): The message to add.
-
-        Returns:
-            None
-        """
         self.messages.append({"role": "user", "content": query})
 
     def plan(self, query: str):
@@ -40,7 +29,7 @@ class PlannerAgent:
             query (str): The request of the user.
 
         Returns:
-            ParsedResponse[Plan]: The plan to complete the request of the user.
+            Plan: The plan to complete the request of the user.
         """
         self.add_messages(query=query)
         response = self.llm.responses.parse(
