@@ -22,23 +22,9 @@ IMMEDIATE PLANNING APPROACH:
 
 
 SAMPLE PLAN FOR REQUEST (NOT LIMITED TO ONLY THESE STEPS)
-Research topic/query,
-Select main points to use from research,
-Write introduction with some given context (ie research notes),
-write folow-up to introduction,
-Put what we have of the essay so far together (YOU DECIDE WHEN TO DO THAT)
-write followup to previous,
-write conclusion,
-review,
-edit,
-proofread,
-return request content
+
 
 SAMPLE PLAN FOR OTHER TYPE OF REQUEST (NOT LIMITED TO ONLY THESE STEPS)
-review,
-edit,
-proofread,
-return essay
 
 
 TOOL CALLING STRATEGY:
