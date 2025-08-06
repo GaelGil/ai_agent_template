@@ -109,11 +109,13 @@ async def create_execute_plan(
     """
     # Try to process the email using agent
     try:
-        plan = planer.plan(content)
-        plan_parsed: Plan = plan.output_parsed
-        res = await executor.execute_plan(plan_parsed)
-        print(res)
+        plan = planer.plan(content)  # create a plan
 
+        plan_parsed: Plan = plan.output_parsed  # parse the plan
+        logger.info(f"Created plan: {plan_parsed}")
+
+        res = await executor.execute_plan(plan_parsed)  # execute the plan
+        logger.info(f"Execution results: {res}")
     except Exception as process_error:  # Exception as process_error
         logger.error(
             f"Error in agentic email processing: {str(process_error)}", exc_info=True
@@ -125,18 +127,10 @@ async def run_agent() -> None:
     """ """
 
     # Initialize agent service
-    query = "write an essay on the culture impact of the internet"
+    query = "write something about ..."
     try:
         orchestrator, planner, mcp_client = await initialize_agent_service()
-        print(orchestrator.tools)
-
-        # success = await create_execute_plan(orchestrator, planner, content)
-
-        # if success:
-        #     logger.info(f"Successfully processed content: {content}")
-        # else:
-        #     logger.warning(f"Failed to process content: {content}")
-
+        await create_execute_plan(orchestrator, planner, query)
     except Exception as e:
         logger.error(f"Error in email processing workflow: {str(e)}")
     finally:
