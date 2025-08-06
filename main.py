@@ -125,7 +125,7 @@ async def run_agent() -> None:
     """ """
 
     # Initialize agent service
-    content = "write an essay on the culture impact of the internet"
+    query = "write an essay on the culture impact of the internet"
     try:
         orchestrator, planner, mcp_client = await initialize_agent_service()
         print(orchestrator.tools)
